@@ -168,6 +168,7 @@
 
 <script>
 (() => {
+  const AUDIO_VERSION = 2;   // bump when the tracks are re-rendered
   const PARTS = [
     {id:'tenor',    name:'Tenor',    c:'var(--tenor)'},
     {id:'lead',     name:'Lead',     c:'var(--lead)'},
@@ -295,7 +296,7 @@
       master.connect(comp).connect(ctx.destination);
       let done = 0;
       await Promise.all(PARTS.map(async p => {
-        const r = await fetch('audio/' + p.id + '.mp3');
+        const r = await fetch('audio/' + p.id + '.mp3?v=' + AUDIO_VERSION);
         if (!r.ok) throw new Error(p.id + '.mp3 ' + r.status);
         const ab = await r.arrayBuffer();
         buffers[p.id] = await new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej));
