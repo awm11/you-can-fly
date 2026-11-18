@@ -38,26 +38,27 @@
   .toggle[aria-pressed="true"]{background:#3a4152;border-color:#5a6378}
   select.btn{padding-right:10px}
   /* loop */
-  .loopbox{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#191c24}
+  .loopbox{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#191c24}
   .loopbox.on{border-color:#4f7cff;box-shadow:0 0 0 1px #4f7cff55 inset}
   .lhead{display:flex;align-items:center;gap:10px}
   .ltitle{font-weight:700;cursor:pointer}
   .lsum{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem}
   .loopbox.on .lsum{color:#9fb6ff}
-  .switch{appearance:none;border:none;width:52px;height:30px;border-radius:15px;background:#3a3f4d;position:relative;cursor:pointer;flex:none;padding:0}
-  .switch span{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
+  .switch{appearance:none;border:none;width:44px;height:26px;border-radius:13px;background:#3a3f4d;position:relative;cursor:pointer;flex:none;padding:0}
+  .switch span{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s}
   .switch[aria-checked="true"]{background:#4f7cff}
-  .switch[aria-checked="true"] span{transform:translateX(22px)}
-  .lgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
-  .lcol{display:flex;flex-direction:column;gap:6px}
-  .stepper{display:flex;align-items:center;gap:6px}
-  .stepper .btn{width:44px;padding:0;font-size:1.3rem}
-  .stepper output{flex:1;text-align:center;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
-  .btn.small{min-height:36px;font-size:.85rem;padding:0 10px}
-  .lquick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
-  .lquick .sub{flex-basis:100%}
-  .lquick .btn{flex:1}
-  @media (min-width:760px){ .lquick .sub{flex-basis:auto} .lquick .btn{flex:0 0 auto} }
+  .switch[aria-checked="true"] span{transform:translateX(18px)}
+  .lgrid{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
+  .lrow{display:flex;align-items:center;gap:8px}
+  .lrow > .sub,.lquick > .sub{width:3.2em;flex:none;font-size:.85rem}
+  .stepper{display:flex;align-items:center;gap:4px}
+  .stepper .btn{width:36px;min-height:36px;padding:0;font-size:1.15rem;border-radius:10px}
+  .stepper output{width:2.1em;text-align:center;font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .btn.small{min-height:36px;font-size:.82rem;padding:0 10px;border-radius:10px}
+  .lrow .btn.small{flex:1;max-width:130px}
+  .lquick{display:flex;align-items:center;gap:6px;margin-top:6px}
+  .lquick .btn{flex:1;max-width:84px}
+  @media (min-width:760px){ .lgrid{grid-template-columns:auto auto;justify-content:start;column-gap:28px} }
   .seek{position:relative}
   .lregion{position:absolute;top:50%;height:16px;margin-top:-8px;border-radius:5px;background:rgba(79,124,255,.35);
     box-shadow:0 0 0 2px #4f7cff inset;pointer-events:none}
@@ -193,19 +194,19 @@
         <span class="lsum" id="lsum"></span>
       </div>
       <div class="lgrid">
-        <div class="lcol">
-          <div class="sub">From bar</div>
+        <div class="lrow">
+          <span class="sub">From</span>
           <div class="stepper"><button class="btn" data-k="a" data-d="-1" aria-label="Loop start earlier">−</button><output id="la">1</output><button class="btn" data-k="a" data-d="1" aria-label="Loop start later">+</button></div>
           <button class="btn small" id="setA">Start here</button>
         </div>
-        <div class="lcol">
-          <div class="sub">To bar</div>
+        <div class="lrow">
+          <span class="sub">To</span>
           <div class="stepper"><button class="btn" data-k="b" data-d="-1" aria-label="Loop end earlier">−</button><output id="lb">4</output><button class="btn" data-k="b" data-d="1" aria-label="Loop end later">+</button></div>
           <button class="btn small" id="setB">End here</button>
         </div>
       </div>
       <div class="lquick">
-        <span class="sub">Quick loop from current bar:</span>
+        <span class="sub">Quick:</span>
         <button class="btn small" data-q="1">1 bar</button>
         <button class="btn small" data-q="2">2 bars</button>
         <button class="btn small" data-q="4">4 bars</button>
