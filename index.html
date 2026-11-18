@@ -87,9 +87,10 @@
   .sbar .title{font-weight:700;margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sbar .play{width:44px;height:44px}
   .sbar .play svg{width:20px;height:20px}
-  .spages{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 8px calc(16px + env(safe-area-inset-bottom))}
-  .spages img{display:block;width:100%;max-width:var(--zw,900px);margin:0 auto 12px;background:#fff;border-radius:4px}
-  .score.zoom .spages img{max-width:none;width:var(--zz,180%)}
+  .spages{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x pan-y;
+    padding:12px 8px calc(16px + env(safe-area-inset-bottom))}
+  .sinner{margin:0 auto}
+  .spages img{display:block;width:100%;margin:0 0 12px;background:#fff;border-radius:4px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   body.noscroll{overflow:hidden}
 
   footer{color:var(--muted);font-size:.78rem;margin-top:18px;text-align:center}
@@ -170,15 +171,14 @@
     </button>
     <span class="barnum" id="sbarnum" style="min-width:3.8em;text-align:left">Bar 1</span>
     <span class="title"></span>
-    <button class="btn" id="zoom" aria-pressed="false">Zoom</button>
     <a class="btn" href="score/you-can-fly.pdf" target="_blank" rel="noopener" style="display:grid;place-items:center;text-decoration:none">PDF</a>
     <button class="btn" id="closeScore" aria-label="Close score">Close</button>
   </div>
-  <div class="spages">
+  <div class="spages" id="spages"><div class="sinner" id="sinner">
     <img src="score/page-1.png" alt="Score page 1" loading="lazy">
     <img src="score/page-2.png" alt="Score page 2" loading="lazy">
     <img src="score/page-3.png" alt="Score page 3" loading="lazy">
-  </div>
+  </div></div>
 </div>
 
 <script>
@@ -412,10 +412,49 @@
 
   // ---------- score viewer ----------
   const scoreEl = $('#score');
-  $('#openScore').onclick = () => { scoreEl.hidden = false; document.body.classList.add('noscroll'); };
+  $('#openScore').onclick = () => { scoreEl.hidden = false; document.body.classList.add('noscroll'); si.style.width = (baseW() * zs) + 'px'; };
   $('#closeScore').onclick = () => { scoreEl.hidden = true; document.body.classList.remove('noscroll'); };
-  $('#zoom').onclick = () => { const z = scoreEl.classList.toggle('zoom'); $('#zoom').setAttribute('aria-pressed', z); };
   $('#splay').onclick = () => $('#play').click();
+  // pinch / ctrl-wheel / double-tap zoom on the score, toolbar stays fixed
+  const sp = $('#spages'), si = $('#sinner');
+  let zs = 1;
+  const baseW = () => Math.min(sp.clientWidth - 16, 900);
+  function setZoom(nz, cx, cy){           // cx,cy = focal point in viewport coords of sp
+    nz = Math.max(1, Math.min(4, nz));
+    const r = sp.getBoundingClientRect();
+    const fx = (sp.scrollLeft + cx - r.left) / zs, fy = (sp.scrollTop + cy - r.top) / zs;
+    zs = nz; si.style.width = (baseW() * zs) + 'px';
+    sp.scrollLeft = fx * zs - (cx - r.left); sp.scrollTop = fy * zs - (cy - r.top);
+  }
+  window.addEventListener('resize', () => { si.style.width = (baseW() * zs) + 'px'; });
+  let pinch = null;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const mid = t => [(t[0].clientX + t[1].clientX)/2, (t[0].clientY + t[1].clientY)/2];
+  sp.addEventListener('touchstart', e => {
+    if (e.touches.length === 2){ pinch = {d: dist(e.touches), z: zs}; e.preventDefault(); }
+  }, {passive:false});
+  sp.addEventListener('touchmove', e => {
+    if (pinch && e.touches.length === 2){
+      e.preventDefault();
+      const [cx, cy] = mid(e.touches);
+      setZoom(pinch.z * dist(e.touches) / pinch.d, cx, cy);
+    }
+  }, {passive:false});
+  sp.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+  let lastTap = 0;
+  sp.addEventListener('touchend', e => {
+    if (e.touches.length || e.changedTouches.length !== 1) return;
+    const now = Date.now(), t = e.changedTouches[0];
+    if (now - lastTap < 300){ setZoom(zs > 1.05 ? 1 : 2, t.clientX, t.clientY); lastTap = 0; e.preventDefault(); }
+    else lastTap = now;
+  });
+  sp.addEventListener('wheel', e => {      // trackpad pinch / ctrl+scroll on desktop
+    if (!e.ctrlKey) return;
+    e.preventDefault(); setZoom(zs * Math.exp(-e.deltaY / 200), e.clientX, e.clientY);
+  }, {passive:false});
+  sp.addEventListener('dblclick', e => setZoom(zs > 1.05 ? 1 : 2, e.clientX, e.clientY));
+  ['gesturestart','gesturechange'].forEach(ev => scoreEl.addEventListener(ev, e => e.preventDefault()));  // stop iOS page zoom
+
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !scoreEl.hidden) $('#closeScore').click(); });
 
   render();
