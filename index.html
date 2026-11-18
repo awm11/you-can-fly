@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14161c">
+<title>You Can Fly · Part Mixer</title>
+<style>
+  :root{
+    --bg:#14161c; --panel:#1d2029; --panel2:#252935; --line:#323746;
+    --text:#eef0f5; --muted:#9aa1b2;
+    --tenor:#5fb3ff; --lead:#ffb347; --baritone:#7ddc8a; --bass:#e57fd0;
+    --accent:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 14px calc(24px + env(safe-area-inset-bottom))}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 2px 14px}
+  h1{font-size:1.45rem;margin:0;letter-spacing:.01em}
+  .sub{color:var(--muted);font-size:.85rem}
+
+  /* transport */
+  .transport{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+  .trow{display:flex;align-items:center;gap:10px}
+  .btn{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);
+    border-radius:12px;min-height:44px;padding:0 14px;font:inherit;font-weight:600;cursor:pointer;touch-action:manipulation}
+  .btn:active{transform:scale(.97)}
+  .btn[disabled]{opacity:.45;cursor:default}
+  .play{width:56px;height:56px;border-radius:50%;padding:0;display:grid;place-items:center;background:var(--accent);color:#111;border:none;flex:none}
+  .play svg{width:24px;height:24px}
+  .icon{width:44px;padding:0;display:grid;place-items:center;flex:none}
+  .icon svg{width:20px;height:20px}
+  .time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem;white-space:nowrap}
+  .barnum{font-variant-numeric:tabular-nums;font-weight:700;min-width:4.5em;text-align:right}
+  .seek{flex:1;min-width:0}
+  .trow2{margin-top:12px;flex-wrap:wrap}
+  .toggle[aria-pressed="true"]{background:#3a4152;border-color:#5a6378}
+  select.btn{padding-right:10px}
+  .status{color:var(--muted);font-size:.85rem;margin-top:10px;min-height:1.2em}
+
+  /* presets */
+  .presets{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+  .preset{font-size:.9rem;padding:0 6px;border-width:2px}
+  .preset .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .preset.active{border-color:var(--c,#fff);background:color-mix(in srgb,var(--c,#fff) 18%,var(--panel2))}
+
+  /* channels */
+  .mixer{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .ch{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;
+    border-top:4px solid var(--c);display:flex;flex-direction:column;gap:12px}
+  .ch h2{margin:0;font-size:1.05rem;display:flex;justify-content:space-between;align-items:center}
+  .meter{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}
+  .meter i{display:block;height:100%;width:0;background:var(--c);transition:width .06s linear}
+  .lbl{display:flex;justify-content:space-between;color:var(--muted);font-size:.8rem;margin-bottom:4px}
+  .lbl b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+  .ms{display:flex;gap:8px}
+  .ms .btn{flex:1;min-height:40px;font-size:.85rem}
+  .mute[aria-pressed="true"]{background:#5b2a2a;border-color:#8a3b3b}
+  .solo[aria-pressed="true"]{background:#5a4d1d;border-color:#9a8530}
+
+  /* range inputs */
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:36px;background:transparent;margin:0;touch-action:pan-y}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--c,#fff) var(--p,50%),var(--panel2) var(--p,50%))}
+  input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:var(--panel2)}
+  input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:var(--c,#fff)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;margin-top:-9px;border:none;box-shadow:0 1px 4px #0008}
+  input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 4px #0008}
+  input.pan::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--panel2) 49.6%,#5a6378 49.6%,#5a6378 50.4%,var(--panel2) 50.4%)}
+  input.pan::-moz-range-progress{background:transparent}
+  .seek input{--c:#fff}
+
+  footer{color:var(--muted);font-size:.78rem;margin-top:18px;text-align:center}
+
+  /* desktop: vertical faders */
+  @media (min-width:760px){
+    .vol-wrap{height:220px;display:flex;justify-content:center;align-items:center}
+    .vol-wrap input{width:200px;transform:rotate(-90deg)}
+  }
+  @media (max-width:759px){
+    .mixer{grid-template-columns:1fr 1fr;gap:10px}
+    .ch{padding:12px;gap:8px}
+    .presets{grid-template-columns:repeat(2,1fr)}
+    .presets .preset:first-child{grid-column:span 2}
+  }
+  @media (max-width:420px){
+    .mixer{grid-template-columns:1fr}
+    .ch{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;row-gap:6px}
+    .ch h2,.ch .meter,.ch .ms{grid-column:1 / -1}
+    h1{font-size:1.25rem}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>You Can Fly <span class="sub">· part mixer</span></h1>
+    <div class="sub">Sammy Fain &amp; Sammy Cahn · arr. Clay Hine</div>
+  </header>
+
+  <section class="transport">
+    <div class="trow">
+      <button class="play" id="play" aria-label="Play" disabled>
+        <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>
+      </button>
+      <button class="btn icon" id="back" aria-label="Back one bar" disabled>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>
+      </button>
+      <button class="btn icon" id="fwd" aria-label="Forward one bar" disabled>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>
+      </button>
+      <div class="barnum" id="barnum">Bar 1</div>
+    </div>
+    <div class="trow trow2">
+      <span class="time" id="cur">0:00</span>
+      <div class="seek"><input type="range" id="seek" min="0" max="1000" value="0" step="1" aria-label="Position" disabled></div>
+      <span class="time" id="dur">0:00</span>
+    </div>
+    <div class="trow trow2">
+      <label class="sub" for="jump">Start at</label>
+      <select class="btn" id="jump" aria-label="Jump to bar"></select>
+      <button class="btn toggle" id="loop" aria-pressed="false">Loop</button>
+      <select class="btn" id="loopTo" aria-label="Loop end bar" hidden></select>
+    </div>
+    <div class="status" id="status">Loading tracks…</div>
+  </section>
+
+  <section class="presets" id="presets"></section>
+  <section class="mixer" id="mixer"></section>
+
+  <footer>Faders and pan are saved on this device. On iPhone, switch off silent mode if you hear nothing.</footer>
+</div>
+
+<script>
+(() => {
+  const PARTS = [
+    {id:'tenor',    name:'Tenor',    c:'var(--tenor)'},
+    {id:'lead',     name:'Lead',     c:'var(--lead)'},
+    {id:'baritone', name:'Baritone', c:'var(--baritone)'},
+    {id:'bass',     name:'Bass',     c:'var(--bass)'},
+  ];
+  // Bar start times (seconds) for bars 1..51
+  const BARS = [0.0,3.0,6.0,9.0,12.75,16.628,20.218,23.561,26.52,28.235,29.949,32.949,36.324,40.572,42.972,45.372,48.706,52.039,55.039,58.039,61.039,65.164,68.992,72.455,75.617,78.668,80.382,82.096,83.811,85.525,87.239,88.954,90.668,92.382,94.096,95.811,97.525,99.239,100.954,102.668,104.382,106.096,107.811,109.525,112.525,115.525,118.525,121.525,124.525,127.525,130.9];
+
+  // Volume slider 0..100 -> gain (v/100)^2 ; 45 ≈ 0.2 gain (≈ -14 dB), 100 = unity
+  const FEAT = {vol:100, pan:35}, BACK = {vol:45, pan:-35};
+  const PRESETS = [{id:'full', name:'Full mix', c:'#ffffff'}].concat(PARTS.map(p => ({id:p.id, name:p.name, c:p.c})));
+  function presetValues(pid){
+    const o = {};
+    PARTS.forEach(p => {
+      if (pid === 'full') o[p.id] = {vol:85, pan:0, mute:false, solo:false};
+      else o[p.id] = Object.assign({mute:false, solo:false}, p.id === pid ? FEAT : BACK);
+    });
+    return o;
+  }
+
+  const $ = s => document.querySelector(s);
+  const store = {
+    get(){ try { return JSON.parse(localStorage.getItem('ycf-mix') || 'null'); } catch(e){ return null; } },
+    set(v){ try { localStorage.setItem('ycf-mix', JSON.stringify(v)); } catch(e){} }
+  };
+  let state = store.get() || {mix: presetValues('full'), preset:'full'};
+
+  let ctx, master, buffers = {}, nodes = {}, sources = [];
+  let playing = false, startCtxTime = 0, offset = 0, duration = 0, raf;
+  let loopOn = false, loopA = 0, loopB = 0;
+
+  // ---------- UI ----------
+  const presetsEl = $('#presets'), mixerEl = $('#mixer');
+  PRESETS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'btn preset'; b.dataset.id = p.id; b.style.setProperty('--c', p.c);
+    b.innerHTML = `<span class="dot" style="background:${p.c}"></span>${p.id==='full' ? p.name : p.name + ' track'}`;
+    b.onclick = () => applyPreset(p.id);
+    presetsEl.appendChild(b);
+  });
+
+  const ui = {};
+  PARTS.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'ch'; el.style.setProperty('--c', p.c);
+    el.innerHTML = `
+      <h2>${p.name}</h2>
+      <div class="meter"><i></i></div>
+      <div>
+        <div class="lbl"><span>Volume</span><b class="vv"></b></div>
+        <div class="vol-wrap"><input type="range" class="vol" min="0" max="100" step="1" aria-label="${p.name} volume"></div>
+      </div>
+      <div>
+        <div class="lbl"><span>Pan</span><b class="pv"></b></div>
+        <input type="range" class="pan" min="-100" max="100" step="1" aria-label="${p.name} pan">
+      </div>
+      <div class="ms">
+        <button class="btn mute" aria-pressed="false">Mute</button>
+        <button class="btn solo" aria-pressed="false">Solo</button>
+      </div>`;
+    mixerEl.appendChild(el);
+    const vol = el.querySelector('.vol'), pan = el.querySelector('.pan');
+    const mute = el.querySelector('.mute'), solo = el.querySelector('.solo');
+    ui[p.id] = {el, vol, pan, mute, solo, vv:el.querySelector('.vv'), pv:el.querySelector('.pv'), meter:el.querySelector('.meter i')};
+    vol.oninput = () => { state.mix[p.id].vol = +vol.value; changed(); };
+    pan.oninput = () => { state.mix[p.id].pan = +pan.value; changed(); };
+    pan.ondblclick = () => { state.mix[p.id].pan = 0; changed(); };
+    mute.onclick = () => { state.mix[p.id].mute = !state.mix[p.id].mute; changed(); };
+    solo.onclick = () => { state.mix[p.id].solo = !state.mix[p.id].solo; changed(); };
+  });
+
+  function changed(){ state.preset = matchPreset(); render(); applyMix(); store.set(state); }
+  function applyPreset(id){ state.mix = presetValues(id); state.preset = id; render(); applyMix(true); store.set(state); }
+  function matchPreset(){
+    for (const p of PRESETS){
+      const v = presetValues(p.id);
+      if (PARTS.every(q => ['vol','pan','mute','solo'].every(k => v[q.id][k] === state.mix[q.id][k]))) return p.id;
+    }
+    return null;
+  }
+  function render(){
+    PARTS.forEach(p => {
+      const m = state.mix[p.id], u = ui[p.id];
+      u.vol.value = m.vol; u.pan.value = m.pan;
+      u.vol.style.setProperty('--p', m.vol + '%');
+      const g = gainOf(m.vol);
+      u.vv.textContent = m.vol === 0 ? '−∞ dB' : (20*Math.log10(g)).toFixed(1) + ' dB';
+      u.pv.textContent = m.pan === 0 ? 'Centre' : (m.pan < 0 ? 'L ' + (-m.pan) : 'R ' + m.pan);
+      u.mute.setAttribute('aria-pressed', m.mute); u.solo.setAttribute('aria-pressed', m.solo);
+    });
+    presetsEl.querySelectorAll('.preset').forEach(b => b.classList.toggle('active', b.dataset.id === state.preset));
+  }
+  const gainOf = v => Math.pow(v/100, 2);
+
+  function applyMix(smooth){
+    if (!ctx) return;
+    const anySolo = PARTS.some(p => state.mix[p.id].solo);
+    const t = ctx.currentTime, tc = smooth ? 0.06 : 0.015;
+    PARTS.forEach(p => {
+      const m = state.mix[p.id];
+      const audible = !m.mute && (!anySolo || m.solo);
+      nodes[p.id].gain.gain.setTargetAtTime(audible ? gainOf(m.vol) : 0, t, tc);
+      nodes[p.id].pan.pan.setTargetAtTime(m.pan/100, t, tc);
+    });
+  }
+
+  // bar selectors
+  const jump = $('#jump'), loopTo = $('#loopTo');
+  BARS.forEach((t,i) => {
+    jump.add(new Option('Bar ' + (i+1), i));
+    loopTo.add(new Option('to bar ' + (i+1), i));
+  });
+  loopTo.value = BARS.length - 1;
+
+  // ---------- audio ----------
+  const status = $('#status');
+  async function load(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 1;
+      const comp = ctx.createDynamicsCompressor();   // safety limiter if several faders are high
+      comp.threshold.value = -3; comp.ratio.value = 12; comp.attack.value = 0.003; comp.release.value = 0.15;
+      master.connect(comp).connect(ctx.destination);
+      let done = 0;
+      await Promise.all(PARTS.map(async p => {
+        const r = await fetch('audio/' + p.id + '.mp3');
+        if (!r.ok) throw new Error(p.id + '.mp3 ' + r.status);
+        const ab = await r.arrayBuffer();
+        buffers[p.id] = await new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej));
+        status.textContent = `Loading tracks… ${++done}/4`;
+      }));
+      duration = Math.min(...PARTS.map(p => buffers[p.id].duration));
+      PARTS.forEach(p => {
+        const gain = ctx.createGain(), pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+        const an = ctx.createAnalyser(); an.fftSize = 512;
+        if (pan){ gain.connect(pan); pan.connect(master); pan.connect(an); }
+        else { gain.connect(master); gain.connect(an); }
+        nodes[p.id] = {gain, pan: pan || {pan:{setTargetAtTime(){}}}, an, data:new Float32Array(an.fftSize)};
+      });
+      applyMix();
+      $('#dur').textContent = fmt(duration);
+      ['#play','#back','#fwd','#seek'].forEach(s => $(s).disabled = false);
+      status.textContent = 'Ready. Choose a preset or set the faders, then press play.';
+    } catch(e){
+      status.textContent = 'Could not load the audio: ' + e.message;
+    }
+  }
+
+  function startAt(pos){
+    stopSources();
+    pos = Math.max(0, Math.min(pos, duration - 0.01));
+    const when = ctx.currentTime + 0.05;
+    sources = PARTS.map(p => {
+      const s = ctx.createBufferSource(); s.buffer = buffers[p.id];
+      s.connect(nodes[p.id].gain); s.start(when, pos); return s;
+    });
+    sources[0].onended = () => { if (playing && sources.length && curTime() >= duration - 0.1) { pause(); offset = 0; tick(); } };
+    startCtxTime = when - pos; playing = true;
+    setPlayIcon(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  }
+  function stopSources(){ sources.forEach(s => { try{ s.onended = null; s.stop(); }catch(e){} }); sources = []; }
+  function pause(){ offset = curTime(); stopSources(); playing = false; setPlayIcon(); }
+  function curTime(){ return playing ? Math.max(0, ctx.currentTime - startCtxTime) : offset; }
+  function seek(t){ offset = Math.max(0, Math.min(t, duration)); if (playing) startAt(offset); tick(); }
+
+  function loop(){
+    const t = curTime();
+    if (loopOn && t >= loopB) { startAt(loopA); }
+    tick(); meters();
+    if (playing) raf = requestAnimationFrame(loop);
+  }
+  let dragging = false;
+  function tick(){
+    const t = curTime();
+    if (!dragging) { $('#seek').value = duration ? Math.round(t / duration * 1000) : 0; }
+    $('#seek').style.setProperty('--p', (duration ? t / duration * 100 : 0) + '%');
+    $('#cur').textContent = fmt(t);
+    $('#barnum').textContent = 'Bar ' + (barAt(t) + 1);
+  }
+  function meters(){
+    PARTS.forEach(p => {
+      const n = nodes[p.id]; n.an.getFloatTimeDomainData(n.data);
+      let s = 0; for (let i = 0; i < n.data.length; i++) s += n.data[i]*n.data[i];
+      const rms = Math.sqrt(s / n.data.length);
+      const pct = Math.max(0, Math.min(100, (20*Math.log10(rms + 1e-6) + 48) / 48 * 100));
+      ui[p.id].meter.style.width = (playing ? pct : 0) + '%';
+    });
+  }
+  const barAt = t => { let i = 0; while (i + 1 < BARS.length && BARS[i+1] <= t + 0.001) i++; return i; };
+  const fmt = t => { t = Math.max(0, t); const m = Math.floor(t/60), s = Math.floor(t%60); return m + ':' + String(s).padStart(2,'0'); };
+  function setPlayIcon(){
+    $('#play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    $('#playIcon').innerHTML = playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
+  }
+  function updateLoop(){
+    loopA = BARS[+jump.value];
+    const endIdx = +loopTo.value + 1;
+    loopB = endIdx < BARS.length ? BARS[endIdx] : duration;
+    if (loopB <= loopA) loopB = loopA + 1;
+  }
+
+  // ---------- events ----------
+  $('#play').onclick = async () => {
+    if (ctx.state === 'suspended') await ctx.resume();
+    if (playing) pause(); else startAt(offset >= duration - 0.05 ? 0 : offset);
+  };
+  $('#back').onclick = () => { const t = curTime(), i = barAt(t); seek(t - BARS[i] > 0.6 ? BARS[i] : BARS[Math.max(0, i-1)]); };
+  $('#fwd').onclick  = () => { const i = barAt(curTime()); if (i + 1 < BARS.length) seek(BARS[i+1]); };
+  const sk = $('#seek');
+  sk.addEventListener('input', () => { dragging = true; $('#cur').textContent = fmt(sk.value/1000*duration); });
+  sk.addEventListener('change', () => { dragging = false; seek(sk.value/1000*duration); });
+  jump.onchange = () => { updateLoop(); if (+loopTo.value < +jump.value) loopTo.value = jump.value; updateLoop(); seek(BARS[+jump.value]); };
+  loopTo.onchange = updateLoop;
+  $('#loop').onclick = () => {
+    loopOn = !loopOn; $('#loop').setAttribute('aria-pressed', loopOn);
+    loopTo.hidden = !loopOn; updateLoop();
+  };
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName)) { e.preventDefault(); $('#play').click(); }
+  });
+
+  render();
+  load();
+})();
+</script>
+</body>
+</html>
