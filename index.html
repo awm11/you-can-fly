@@ -90,7 +90,11 @@
   .spages{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x pan-y;
     padding:12px 8px calc(16px + env(safe-area-inset-bottom))}
   .sinner{margin:0 auto}
-  .spages img{display:block;width:100%;margin:0 0 12px;background:#fff;border-radius:4px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .pw{position:relative;margin:0 0 12px;cursor:pointer}
+  .hl{position:absolute;pointer-events:none;border-radius:6px;background:rgba(255,190,70,.28);
+    box-shadow:0 0 0 3px rgba(255,170,40,.9) inset;transition:left .12s,top .12s,width .12s,height .12s}
+  .hl[hidden]{display:none}
+  .spages img{display:block;width:100%;margin:0;background:#fff;border-radius:4px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   body.noscroll{overflow:hidden}
 
   footer{color:var(--muted);font-size:.78rem;margin-top:18px;text-align:center}
@@ -175,9 +179,9 @@
     <button class="btn" id="closeScore" aria-label="Close score">Close</button>
   </div>
   <div class="spages" id="spages"><div class="sinner" id="sinner">
-    <img src="score/page-1.png" alt="Score page 1" loading="lazy">
-    <img src="score/page-2.png" alt="Score page 2" loading="lazy">
-    <img src="score/page-3.png" alt="Score page 3" loading="lazy">
+    <div class="pw" data-page="1"><img src="score/page-1.png" alt="Score page 1" loading="lazy"></div>
+    <div class="pw" data-page="2"><img src="score/page-2.png" alt="Score page 2" loading="lazy"></div>
+    <div class="pw" data-page="3"><img src="score/page-3.png" alt="Score page 3" loading="lazy"></div>
   </div></div>
 </div>
 
@@ -364,6 +368,7 @@
     $('#seek').style.setProperty('--p', (duration ? t / duration * 100 : 0) + '%');
     $('#cur').textContent = fmt(t);
     $('#barnum').textContent = $('#sbarnum').textContent = 'Bar ' + (barAt(t) + 1);
+    if (typeof updateHighlight === 'function' && !scoreEl.hidden) updateHighlight();
   }
   function meters(){
     PARTS.forEach(p => {
@@ -412,7 +417,7 @@
 
   // ---------- score viewer ----------
   const scoreEl = $('#score');
-  $('#openScore').onclick = () => { scoreEl.hidden = false; document.body.classList.add('noscroll'); si.style.width = (baseW() * zs) + 'px'; };
+  $('#openScore').onclick = () => { scoreEl.hidden = false; document.body.classList.add('noscroll'); si.style.width = (baseW() * zs) + 'px'; userScrollAt = 0; requestAnimationFrame(() => updateHighlight(true)); };
   $('#closeScore').onclick = () => { scoreEl.hidden = true; document.body.classList.remove('noscroll'); };
   $('#splay').onclick = () => $('#play').click();
   // pinch / ctrl-wheel / double-tap zoom on the score, toolbar stays fixed
@@ -453,6 +458,40 @@
     e.preventDefault(); setZoom(zs * Math.exp(-e.deltaY / 200), e.clientX, e.clientY);
   }, {passive:false});
   sp.addEventListener('dblclick', e => setZoom(zs > 1.05 ? 1 : 2, e.clientX, e.clientY));
+
+  // ---------- bar highlight on the score ----------
+  const BOXES = [[1, 0.0992, 0.1441, 0.5971, 0.3288], [1, 0.5971, 0.1441, 0.735, 0.3288], [1, 0.735, 0.1441, 0.9389, 0.3288], [1, 0.0774, 0.3762, 0.3019, 0.5554], [1, 0.3019, 0.3762, 0.6019, 0.5554], [1, 0.6019, 0.3762, 0.9389, 0.5554], [1, 0.0774, 0.5917, 0.34, 0.767], [1, 0.34, 0.5917, 0.5269, 0.767], [1, 0.5269, 0.5917, 0.7411, 0.767], [1, 0.7411, 0.5917, 0.9117, 0.767], [1, 0.0774, 0.7708, 0.5541, 0.9457], [1, 0.5541, 0.7708, 0.9389, 0.9457], [2, 0.0774, 0.0718, 0.4828, 0.2274], [2, 0.4828, 0.0718, 0.7393, 0.2274], [2, 0.7393, 0.0718, 0.9099, 0.2274], [2, 0.0774, 0.2522, 0.3636, 0.4275], [2, 0.3636, 0.2522, 0.5402, 0.4275], [2, 0.5402, 0.2522, 0.9389, 0.4275], [2, 0.0774, 0.4391, 0.3479, 0.6131], [2, 0.3479, 0.4391, 0.4924, 0.6131], [2, 0.4924, 0.4391, 0.6231, 0.6131], [2, 0.6231, 0.4391, 0.9389, 0.6131], [2, 0.0774, 0.6208, 0.4434, 0.7935], [2, 0.4434, 0.6208, 0.7018, 0.7935], [2, 0.7018, 0.6208, 0.9389, 0.7935], [2, 0.0774, 0.7901, 0.3714, 0.9628], [2, 0.3714, 0.7901, 0.6443, 0.9628], [2, 0.6443, 0.7901, 0.9389, 0.9628], [3, 0.0774, 0.0504, 0.3025, 0.2121], [3, 0.3025, 0.0504, 0.5245, 0.2121], [3, 0.5245, 0.0504, 0.637, 0.2121], [3, 0.637, 0.0504, 0.7846, 0.2121], [3, 0.7846, 0.0504, 0.9389, 0.2121], [3, 0.0774, 0.2227, 0.3297, 0.3989], [3, 0.3297, 0.2227, 0.5178, 0.3989], [3, 0.5178, 0.2227, 0.7399, 0.3989], [3, 0.7399, 0.2227, 0.9389, 0.3989], [3, 0.0774, 0.4091, 0.3424, 0.5853], [3, 0.3424, 0.4091, 0.5463, 0.5853], [3, 0.5463, 0.4091, 0.7495, 0.5853], [3, 0.7495, 0.4091, 0.9389, 0.5853], [3, 0.0774, 0.6054, 0.3436, 0.7674], [3, 0.3436, 0.6054, 0.5735, 0.7674], [3, 0.5735, 0.6054, 0.8016, 0.7674], [3, 0.8016, 0.6054, 0.9389, 0.7674], [3, 0.0774, 0.7862, 0.3267, 0.9628], [3, 0.3267, 0.7862, 0.4174, 0.9628], [3, 0.4174, 0.7862, 0.5523, 0.9628], [3, 0.5523, 0.7862, 0.6981, 0.9628], [3, 0.6981, 0.7862, 0.8373, 0.9628], [3, 0.8373, 0.7862, 0.9371, 0.9628]];   // per bar: [page, x0, y0, x1, y1] as fractions of the page image
+  const hl = document.createElement('div'); hl.className = 'hl'; hl.hidden = true;
+  let hlBar = -1, userScrollAt = 0;
+  ['touchstart','wheel','mousedown'].forEach(ev => sp.addEventListener(ev, () => { userScrollAt = Date.now(); }, {passive:true}));
+  function showBar(i, follow){
+    const b = BOXES[i]; if (!b) return;
+    const pw = si.querySelector(`.pw[data-page="${b[0]}"]`);
+    if (hl.parentNode !== pw) pw.appendChild(hl);
+    Object.assign(hl.style, {left:(b[1]*100)+'%', top:(b[2]*100)+'%', width:((b[3]-b[1])*100)+'%', height:((b[4]-b[2])*100)+'%'});
+    hl.hidden = false;
+    if (follow && !scoreEl.hidden && Date.now() - userScrollAt > 3000){
+      const r = hl.getBoundingClientRect(), v = sp.getBoundingClientRect();
+      const offV = r.top < v.top + 8 || r.bottom > v.bottom - 8, offH = r.left < v.left || r.right > v.right;
+      if (offV || offH){
+        sp.scrollTo({
+          top:  offV ? sp.scrollTop + (r.top - v.top) - v.height*0.25 : sp.scrollTop,
+          left: offH ? sp.scrollLeft + (r.left - v.left) - 16 : sp.scrollLeft,
+          behavior:'smooth'});
+      }
+    }
+  }
+  function updateHighlight(force){
+    const i = barAt(curTime());
+    if (i !== hlBar || force){ hlBar = i; showBar(i, true); }
+  }
+  // tap a bar to jump there
+  si.addEventListener('click', e => {
+    const pw = e.target.closest('.pw'); if (!pw || !duration) return;
+    const r = pw.getBoundingClientRect(), x = (e.clientX - r.left)/r.width, y = (e.clientY - r.top)/r.height, pg = +pw.dataset.page;
+    const i = BOXES.findIndex(b => b[0] === pg && x >= b[1] && x <= b[3] && y >= b[2] && y <= b[4]);
+    if (i >= 0){ userScrollAt = 0; seek(BARS[i]); updateHighlight(true); }
+  });
   ['gesturestart','gesturechange'].forEach(ev => scoreEl.addEventListener(ev, e => e.preventDefault()));  // stop iOS page zoom
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !scoreEl.hidden) $('#closeScore').click(); });
