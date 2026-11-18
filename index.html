@@ -70,6 +70,21 @@
   input.pan::-moz-range-progress{background:transparent}
   .seek input{--c:#fff}
 
+
+  /* score viewer */
+  .scorebtn{margin-left:auto}
+  .score{position:fixed;inset:0;z-index:50;background:#0e1014;display:flex;flex-direction:column}
+  .score[hidden]{display:none}
+  .sbar{display:flex;align-items:center;gap:8px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));
+    background:var(--panel);border-bottom:1px solid var(--line)}
+  .sbar .title{font-weight:700;margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sbar .play{width:44px;height:44px}
+  .sbar .play svg{width:20px;height:20px}
+  .spages{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 8px calc(16px + env(safe-area-inset-bottom))}
+  .spages img{display:block;width:100%;max-width:var(--zw,900px);margin:0 auto 12px;background:#fff;border-radius:4px}
+  .score.zoom .spages img{max-width:none;width:var(--zz,180%)}
+  body.noscroll{overflow:hidden}
+
   footer{color:var(--muted);font-size:.78rem;margin-top:18px;text-align:center}
 
   /* desktop: vertical faders */
@@ -110,6 +125,7 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>
       </button>
       <div class="barnum" id="barnum">Bar 1</div>
+      <button class="btn scorebtn" id="openScore">Score</button>
     </div>
     <div class="trow trow2">
       <span class="time" id="cur">0:00</span>
@@ -129,6 +145,25 @@
   <section class="mixer" id="mixer"></section>
 
   <footer>Faders and pan are saved on this device. On iPhone, switch off silent mode if you hear nothing.</footer>
+</div>
+
+
+<div class="score" id="score" hidden role="dialog" aria-label="Sheet music">
+  <div class="sbar">
+    <button class="play" id="splay" aria-label="Play" disabled>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>
+    </button>
+    <span class="barnum" id="sbarnum" style="min-width:3.8em;text-align:left">Bar 1</span>
+    <span class="title"></span>
+    <button class="btn" id="zoom" aria-pressed="false">Zoom</button>
+    <a class="btn" href="score/you-can-fly.pdf" target="_blank" rel="noopener" style="display:grid;place-items:center;text-decoration:none">PDF</a>
+    <button class="btn" id="closeScore" aria-label="Close score">Close</button>
+  </div>
+  <div class="spages">
+    <img src="score/page-1.png" alt="Score page 1" loading="lazy">
+    <img src="score/page-2.png" alt="Score page 2" loading="lazy">
+    <img src="score/page-3.png" alt="Score page 3" loading="lazy">
+  </div>
 </div>
 
 <script>
@@ -276,7 +311,7 @@
       });
       applyMix();
       $('#dur').textContent = fmt(duration);
-      ['#play','#back','#fwd','#seek'].forEach(s => $(s).disabled = false);
+      ['#play','#splay','#back','#fwd','#seek'].forEach(s => $(s).disabled = false);
       status.textContent = 'Ready. Choose a preset or set the faders, then press play.';
     } catch(e){
       status.textContent = 'Could not load the audio: ' + e.message;
@@ -312,7 +347,7 @@
     if (!dragging) { $('#seek').value = duration ? Math.round(t / duration * 1000) : 0; }
     $('#seek').style.setProperty('--p', (duration ? t / duration * 100 : 0) + '%');
     $('#cur').textContent = fmt(t);
-    $('#barnum').textContent = 'Bar ' + (barAt(t) + 1);
+    $('#barnum').textContent = $('#sbarnum').textContent = 'Bar ' + (barAt(t) + 1);
   }
   function meters(){
     PARTS.forEach(p => {
@@ -327,6 +362,8 @@
   const fmt = t => { t = Math.max(0, t); const m = Math.floor(t/60), s = Math.floor(t%60); return m + ':' + String(s).padStart(2,'0'); };
   function setPlayIcon(){
     $('#play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    $('#splay').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    $('#splay svg').innerHTML = playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
     $('#playIcon').innerHTML = playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
   }
   function updateLoop(){
@@ -355,6 +392,15 @@
   document.addEventListener('keydown', e => {
     if (e.code === 'Space' && !['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName)) { e.preventDefault(); $('#play').click(); }
   });
+
+
+  // ---------- score viewer ----------
+  const scoreEl = $('#score');
+  $('#openScore').onclick = () => { scoreEl.hidden = false; document.body.classList.add('noscroll'); };
+  $('#closeScore').onclick = () => { scoreEl.hidden = true; document.body.classList.remove('noscroll'); };
+  $('#zoom').onclick = () => { const z = scoreEl.classList.toggle('zoom'); $('#zoom').setAttribute('aria-pressed', z); };
+  $('#splay').onclick = () => $('#play').click();
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !scoreEl.hidden) $('#closeScore').click(); });
 
   render();
   load();
