@@ -37,6 +37,33 @@
   .trow2{margin-top:12px;flex-wrap:wrap}
   .toggle[aria-pressed="true"]{background:#3a4152;border-color:#5a6378}
   select.btn{padding-right:10px}
+  /* loop */
+  .loopbox{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#191c24}
+  .loopbox.on{border-color:#4f7cff;box-shadow:0 0 0 1px #4f7cff55 inset}
+  .lhead{display:flex;align-items:center;gap:10px}
+  .ltitle{font-weight:700;cursor:pointer}
+  .lsum{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem}
+  .loopbox.on .lsum{color:#9fb6ff}
+  .switch{appearance:none;border:none;width:52px;height:30px;border-radius:15px;background:#3a3f4d;position:relative;cursor:pointer;flex:none;padding:0}
+  .switch span{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
+  .switch[aria-checked="true"]{background:#4f7cff}
+  .switch[aria-checked="true"] span{transform:translateX(22px)}
+  .lgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .lcol{display:flex;flex-direction:column;gap:6px}
+  .stepper{display:flex;align-items:center;gap:6px}
+  .stepper .btn{width:44px;padding:0;font-size:1.3rem}
+  .stepper output{flex:1;text-align:center;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .btn.small{min-height:36px;font-size:.85rem;padding:0 10px}
+  .lquick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
+  .lquick .sub{flex-basis:100%}
+  .lquick .btn{flex:1}
+  @media (min-width:760px){ .lquick .sub{flex-basis:auto} .lquick .btn{flex:0 0 auto} }
+  .seek{position:relative}
+  .lregion{position:absolute;top:50%;height:16px;margin-top:-8px;border-radius:5px;background:rgba(79,124,255,.35);
+    box-shadow:0 0 0 2px #4f7cff inset;pointer-events:none}
+  .lregion[hidden]{display:none}
+  .lr{position:absolute;pointer-events:none;background:rgba(79,124,255,.10);border-top:3px solid rgba(79,124,255,.75);border-bottom:3px solid rgba(79,124,255,.75)}
+  .sbar .btn[aria-pressed="true"]{background:#4f7cff;border-color:#4f7cff;color:#fff}
   .status{color:var(--muted);font-size:.85rem;margin-top:10px;min-height:1.2em}
 
   /* presets */
@@ -149,14 +176,37 @@
     </div>
     <div class="trow trow2">
       <span class="time" id="cur">0:00</span>
-      <div class="seek"><input type="range" id="seek" min="0" max="1000" value="0" step="1" aria-label="Position" disabled></div>
+      <div class="seek"><div class="lregion" id="lregion" hidden></div><input type="range" id="seek" min="0" max="1000" value="0" step="1" aria-label="Position" disabled></div>
       <span class="time" id="dur">0:00</span>
     </div>
     <div class="trow trow2">
-      <label class="sub" for="jump">Start at</label>
-      <select class="btn" id="jump" aria-label="Jump to bar"></select>
-      <button class="btn toggle" id="loop" aria-pressed="false">Loop</button>
-      <select class="btn" id="loopTo" aria-label="Loop end bar" hidden></select>
+      <label class="sub" for="jump">Go to</label>
+      <select class="btn" id="jump" aria-label="Go to bar"></select>
+    </div>
+    <div class="loopbox" id="loopbox">
+      <div class="lhead">
+        <button class="switch" id="loop" role="switch" aria-checked="false" aria-label="Loop on/off"><span></span></button>
+        <label for="loop" class="ltitle">Loop</label>
+        <span class="lsum" id="lsum"></span>
+      </div>
+      <div class="lgrid">
+        <div class="lcol">
+          <div class="sub">From bar</div>
+          <div class="stepper"><button class="btn" data-k="a" data-d="-1" aria-label="Loop start earlier">−</button><output id="la">1</output><button class="btn" data-k="a" data-d="1" aria-label="Loop start later">+</button></div>
+          <button class="btn small" id="setA">Start here</button>
+        </div>
+        <div class="lcol">
+          <div class="sub">To bar</div>
+          <div class="stepper"><button class="btn" data-k="b" data-d="-1" aria-label="Loop end earlier">−</button><output id="lb">4</output><button class="btn" data-k="b" data-d="1" aria-label="Loop end later">+</button></div>
+          <button class="btn small" id="setB">End here</button>
+        </div>
+      </div>
+      <div class="lquick">
+        <span class="sub">Quick loop from current bar:</span>
+        <button class="btn small" data-q="1">1 bar</button>
+        <button class="btn small" data-q="2">2 bars</button>
+        <button class="btn small" data-q="4">4 bars</button>
+      </div>
     </div>
     <div class="status" id="status">Loading tracks…</div>
   </section>
@@ -175,6 +225,7 @@
     </button>
     <span class="barnum" id="sbarnum" style="min-width:3.8em;text-align:left">Bar 1</span>
     <span class="title"></span>
+    <button class="btn" id="sloop" aria-pressed="false">Loop</button>
     <a class="btn" href="score/you-can-fly.pdf" target="_blank" rel="noopener" style="display:grid;place-items:center;text-decoration:none">PDF</a>
     <button class="btn" id="closeScore" aria-label="Close score">Close</button>
   </div>
@@ -296,12 +347,8 @@
   }
 
   // bar selectors
-  const jump = $('#jump'), loopTo = $('#loopTo');
-  BARS.forEach((t,i) => {
-    jump.add(new Option('Bar ' + (i+1), i));
-    loopTo.add(new Option('to bar ' + (i+1), i));
-  });
-  loopTo.value = BARS.length - 1;
+  const jump = $('#jump');
+  BARS.forEach((t,i) => jump.add(new Option('Bar ' + (i+1), i)));
 
   // ---------- audio ----------
   const status = $('#status');
@@ -332,6 +379,7 @@
       applyMix();
       $('#dur').textContent = fmt(duration);
       ['#play','#splay','#back','#fwd','#seek'].forEach(s => $(s).disabled = false);
+      updateLoop();
       status.textContent = 'Ready. Choose a preset or set the faders, then press play.';
     } catch(e){
       status.textContent = 'Could not load the audio: ' + e.message;
@@ -368,6 +416,7 @@
     $('#seek').style.setProperty('--p', (duration ? t / duration * 100 : 0) + '%');
     $('#cur').textContent = fmt(t);
     $('#barnum').textContent = $('#sbarnum').textContent = 'Bar ' + (barAt(t) + 1);
+    if (document.activeElement !== jump && +jump.value !== barAt(t)) jump.value = barAt(t);
     if (typeof updateHighlight === 'function' && !scoreEl.hidden) updateHighlight();
   }
   function meters(){
@@ -387,12 +436,34 @@
     $('#splay svg').innerHTML = playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
     $('#playIcon').innerHTML = playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M7 4.5v15l13-7.5z"/>';
   }
+  // ---------- loop ----------
+  var scoreReady = false;
+  const NB = BARS.length;
+  let la = 0, lb = 3;
+  if (state.loop){ la = state.loop.a; lb = state.loop.b; }
   function updateLoop(){
-    loopA = BARS[+jump.value];
-    const endIdx = +loopTo.value + 1;
-    loopB = endIdx < BARS.length ? BARS[endIdx] : duration;
-    if (loopB <= loopA) loopB = loopA + 1;
+    la = Math.max(0, Math.min(NB-1, la)); lb = Math.max(la, Math.min(NB-1, lb));
+    loopA = BARS[la];
+    loopB = lb + 1 < NB ? BARS[lb+1] : (duration ? duration - 0.05 : 1e9);
+    $('#la').textContent = la + 1; $('#lb').textContent = lb + 1;
+    $('#lsum').textContent = (la === lb ? 'Bar ' + (la+1) : 'Bars ' + (la+1) + '–' + (lb+1)) + (loopOn ? ' · on' : ' · off');
+    $('#loop').setAttribute('aria-checked', loopOn); $('#sloop').setAttribute('aria-pressed', loopOn);
+    $('#loopbox').classList.toggle('on', loopOn);
+    const reg = $('#lregion');
+    if (loopOn && duration){
+      reg.hidden = false;
+      reg.style.left = (loopA/duration*100) + '%';
+      reg.style.width = ((Math.min(loopB, duration) - loopA)/duration*100) + '%';
+    } else reg.hidden = true;
+    if (scoreReady) drawLoopOnScore();
+    state.loop = {a:la, b:lb}; store.set(state);
   }
+  function enforceLoop(){   // if loop is on and we're outside it, go to its start
+    if (!loopOn) return;
+    const t = curTime();
+    if (t < loopA - 0.01 || t >= loopB) seek(loopA);
+  }
+  function setLoop(on){ loopOn = on; updateLoop(); enforceLoop(); }
 
   // ---------- events ----------
   $('#play').onclick = async () => {
@@ -404,12 +475,19 @@
   const sk = $('#seek');
   sk.addEventListener('input', () => { dragging = true; $('#cur').textContent = fmt(sk.value/1000*duration); });
   sk.addEventListener('change', () => { dragging = false; seek(sk.value/1000*duration); });
-  jump.onchange = () => { updateLoop(); if (+loopTo.value < +jump.value) loopTo.value = jump.value; updateLoop(); seek(BARS[+jump.value]); };
-  loopTo.onchange = updateLoop;
-  $('#loop').onclick = () => {
-    loopOn = !loopOn; $('#loop').setAttribute('aria-pressed', loopOn);
-    loopTo.hidden = !loopOn; updateLoop();
-  };
+  jump.onchange = () => { const i = +jump.value; if (loopOn && (i < la || i > lb)) setLoop(false); seek(BARS[i]); };
+  $('#loop').onclick = () => setLoop(!loopOn);
+  $('#sloop').onclick = () => setLoop(!loopOn);
+  document.querySelectorAll('.stepper .btn').forEach(b => b.onclick = () => {
+    const d = +b.dataset.d;
+    if (b.dataset.k === 'a'){ la += d; if (la > lb) lb = la; } else { lb += d; if (lb < la) la = lb; }
+    updateLoop(); enforceLoop();
+  });
+  $('#setA').onclick = () => { la = barAt(curTime()); if (lb < la) lb = la; updateLoop(); enforceLoop(); };
+  $('#setB').onclick = () => { lb = barAt(curTime()); if (la > lb) la = lb; updateLoop(); enforceLoop(); };
+  document.querySelectorAll('.lquick .btn').forEach(b => b.onclick = () => {
+    la = barAt(curTime()); lb = la + (+b.dataset.q) - 1; loopOn = true; updateLoop(); seek(BARS[la]);
+  });
   document.addEventListener('keydown', e => {
     if (e.code === 'Space' && !['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName)) { e.preventDefault(); $('#play').click(); }
   });
@@ -481,6 +559,17 @@
       }
     }
   }
+  const lrBoxes = [];
+  function drawLoopOnScore(){
+    lrBoxes.forEach(e => e.remove()); lrBoxes.length = 0;
+    if (!loopOn) return;
+    for (let i = la; i <= lb; i++){
+      const b = BOXES[i]; if (!b) continue;
+      const d = document.createElement('div'); d.className = 'lr';
+      Object.assign(d.style, {left:(b[1]*100)+'%', top:(b[2]*100)+'%', width:((b[3]-b[1])*100)+'%', height:((b[4]-b[2])*100)+'%'});
+      si.querySelector(`.pw[data-page="${b[0]}"]`).prepend(d); lrBoxes.push(d);
+    }
+  }
   function updateHighlight(force){
     const i = barAt(curTime());
     if (i !== hlBar || force){ hlBar = i; showBar(i, true); }
@@ -490,13 +579,15 @@
     const pw = e.target.closest('.pw'); if (!pw || !duration) return;
     const r = pw.getBoundingClientRect(), x = (e.clientX - r.left)/r.width, y = (e.clientY - r.top)/r.height, pg = +pw.dataset.page;
     const i = BOXES.findIndex(b => b[0] === pg && x >= b[1] && x <= b[3] && y >= b[2] && y <= b[4]);
-    if (i >= 0){ userScrollAt = 0; seek(BARS[i]); updateHighlight(true); }
+    if (i >= 0){ if (loopOn && (i < la || i > lb)) setLoop(false); userScrollAt = 0; seek(BARS[i]); updateHighlight(true); }
   });
+  scoreReady = true;
   ['gesturestart','gesturechange'].forEach(ev => scoreEl.addEventListener(ev, e => e.preventDefault()));  // stop iOS page zoom
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !scoreEl.hidden) $('#closeScore').click(); });
 
   render();
+  updateLoop();
   load();
 })();
 </script>
