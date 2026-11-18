@@ -72,7 +72,14 @@
 
 
   /* score viewer */
-  .scorebtn{margin-left:auto}
+  .scorecta{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;margin:0 0 14px;padding:0 18px;
+    border:none;border-radius:16px;cursor:pointer;font:inherit;font-size:1.1rem;font-weight:700;color:#14161c;
+    background:linear-gradient(135deg,#ffd27a,#ffb347);box-shadow:0 4px 18px #ffb34740;touch-action:manipulation}
+  .scorecta:hover{filter:brightness(1.05)}
+  .scorecta:active{transform:scale(.985)}
+  .scorecta svg{width:26px;height:26px;flex:none}
+  .scorecta span{flex:1;text-align:left}
+  .scorecta .chev{width:22px;height:22px}
   .score{position:fixed;inset:0;z-index:50;background:#0e1014;display:flex;flex-direction:column}
   .score[hidden]{display:none}
   .sbar{display:flex;align-items:center;gap:8px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));
@@ -113,6 +120,15 @@
     <div class="sub">Sammy Fain &amp; Sammy Cahn · arr. Clay Hine</div>
   </header>
 
+  <button class="scorecta" id="openScore">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>
+      <path d="M11 17.5V11l4-1v6"/><circle cx="9.5" cy="17.5" r="1.5"/><circle cx="13.5" cy="16" r="1.5"/>
+    </svg>
+    <span>View sheet music</span>
+    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+  </button>
+
   <section class="transport">
     <div class="trow">
       <button class="play" id="play" aria-label="Play" disabled>
@@ -125,7 +141,6 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>
       </button>
       <div class="barnum" id="barnum">Bar 1</div>
-      <button class="btn scorebtn" id="openScore">Score</button>
     </div>
     <div class="trow trow2">
       <span class="time" id="cur">0:00</span>
