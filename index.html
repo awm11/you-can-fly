@@ -138,9 +138,12 @@
     .presets .preset:first-child{grid-column:span 2}
   }
   @media (max-width:420px){
-    .mixer{grid-template-columns:1fr}
-    .ch{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;row-gap:6px}
-    .ch h2,.ch .meter,.ch .ms{grid-column:1 / -1}
+    .mixer{gap:8px}
+    .ch{padding:10px;gap:6px;border-radius:14px}
+    .ch h2{font-size:1rem}
+    .lbl{font-size:.75rem}
+    .ms{gap:6px}
+    .ms .btn{min-height:38px;font-size:.8rem;padding:0 4px}
     h1{font-size:1.25rem}
   }
 </style>
